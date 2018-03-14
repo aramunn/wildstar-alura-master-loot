@@ -1,4 +1,8 @@
 local AluraMasterLoot = {
+  tRanks = {},
+  tRaiders = {},
+  tRollers = {},
+  tRequests = {},
   tSave = {
     arData = {},
     bRaidOnly = false,
@@ -99,7 +103,7 @@ function AluraMasterLoot:CheckForRollModifiers(strName, strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
-  if not (self.tRequests and self.tRequests[item.nLootId]) then return end
+  if not self.tRequests[item.nLootId] then return end
   self.tRequests[item.nLootId][strName] = DetermineModifiers(strText)
 end
 
