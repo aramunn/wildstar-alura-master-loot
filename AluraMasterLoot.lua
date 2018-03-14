@@ -231,6 +231,40 @@ function AluraMasterLoot:FormatRollResult(tResult)
   )
 end
 
+----------------
+-- Loot Squid --
+----------------
+
+function AluraMasterLoot:HookLootSquid()
+  local addon = Apollo.GetAddon("LootSquid")
+  if not addon then return end
+  local func = addon.RefreshPlayerList
+  addon.RefreshPlayerList = function(ref, item, ...)
+    func(ref, item, ...)
+    self:UpdateLootSquid(ref, item)
+  end
+end
+
+function AluraMasterLoot:UpdateLootSquid(ref, item)
+  local tInfo = self.tLootList[item.nLootId]
+  if not tInfo then return end
+  if tInfo.arRollResults then
+    for _, tResult in ipairs(tInfo.arRollResults) do
+      local wndPlayer = ref.tPlayerWindows[tResult.strName]
+      if wndPlayer then
+        --TODO
+      end
+    end
+  else
+    for strName, tMods in pairs(tInfo.tRequests) do
+      local wndPlayer = ref.tPlayerWindows[strName]
+      if wndPlayer then
+        --TODO
+      end
+    end
+  end
+end
+
 -----------------------
 -- Chat Input/Output --
 -----------------------
@@ -418,6 +452,7 @@ function AluraMasterLoot:OnDocumentReady()
   Apollo.RegisterEventHandler("MasterLootUpdate", "UpdateLootList", self)
   Apollo.RegisterEventHandler("LootAssigned",     "UpdateLootList", self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateLootList", self)
+  self:HookLootSquid()
 end
 
 local AluraMasterLootInst = AluraMasterLoot:new()
