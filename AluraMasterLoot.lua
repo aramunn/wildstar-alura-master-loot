@@ -63,6 +63,15 @@ function AluraMasterLoot:UpdateRaiders()
   end
 end
 
+function AluraMasterLoot:UpdateLootList()
+  local arLootList = GameLib.GetMasterLoot()
+  local tRequests = {}
+  for _, item in ipairs(arLootList) do
+    tRequests = self.tRequests[item.nLootId] or {}
+  end
+  self.tRequests = tRequests
+end
+
 function AluraMasterLoot:CheckForRoll(strText)
   if not self.bInRollWindow then return end
   local strName, strRoll, strRange = string.match(strText, kstrRollRegex)
@@ -84,9 +93,8 @@ function AluraMasterLoot:CheckForRollModifiers(strName, strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
-  --TODO can use item as key?
-  self.tRequests[item] = self.tRequests[item] or {}
-  self.tRequests[item][strName] = DetermineModifiers(strText)
+  if not self.tRequests[item.nLootId] then return end
+  self.tRequests[item.nLootId][strName] = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
@@ -269,11 +277,14 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "LoadMainWindow", self)
-  Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", self)
-  Apollo.RegisterEventHandler("Group_Join",   "UpdateGrid", self)
-  Apollo.RegisterEventHandler("Group_Left",   "UpdateGrid", self)
-  Apollo.RegisterEventHandler("Group_Add",    "UpdateGrid", self)
-  Apollo.RegisterEventHandler("Group_Remove", "UpdateGrid", self)
+  Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
+  Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
+  Apollo.RegisterEventHandler("Group_Left",       "UpdateGrid",     self)
+  Apollo.RegisterEventHandler("Group_Add",        "UpdateGrid",     self)
+  Apollo.RegisterEventHandler("Group_Remove",     "UpdateGrid",     self)
+  Apollo.RegisterEventHandler("MasterLootUpdate", "UpdateLootList", self)
+  Apollo.RegisterEventHandler("LootAssigned",     "UpdateLootList", self)
+  Apollo.RegisterEventHandler("Group_Left",       "UpdateLootList", self)
 end
 
 local AluraMasterLootInst = AluraMasterLoot:new()
