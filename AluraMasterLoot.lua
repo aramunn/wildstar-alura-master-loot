@@ -188,7 +188,15 @@ function AluraMasterLoot:RollResultSorter(tA, tB)
 end
 
 function AluraMasterLoot:FormatRollResult(tResult)
-  --TODO
+  return string.format(
+    "%s %s %s %s %3d %s",
+    tResult.nRank and "T"..tostring(tResult.nRank) or "  ",
+    tResult.bIsMainSpec and "MS" or "  ",
+    tResult.bIsOffSpec and "OS" or "  ",
+    tResult.bIsSidegrade and "SG" or "  ",
+    tResult.nRoll or 0,
+    tResult.strName,
+  )
 end
 
 -----------------------
