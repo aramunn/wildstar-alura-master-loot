@@ -172,7 +172,8 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
 end
 
 function AluraMasterLoot:RollResultSorter(tA, tB)
-  local arInfo = { {
+  local arInfo = {
+    {
       strKey = "nRank",
       funcRet = function(a, b)
         return a < b
@@ -370,7 +371,6 @@ function AluraMasterLoot:OnSave(eLevel)
 end
 
 function AluraMasterLoot:OnRestore(eLevel, tSave)
-  if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return end
   for k,v in pairs(tSave) do
     if self.tSave[k] ~= nil then
       self.tSave[k] = v
