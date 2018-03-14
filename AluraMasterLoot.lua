@@ -116,7 +116,9 @@ end
 
 function AluraMasterLoot:OnRollWindowEnd()
   self.bInRollWindow = false
-  --TODO determine winner
+  self:PartyPrint("============================")
+  self:PartyPrint("Rolling has closed. Results:")
+  self:PartyPrint("============================")
 end
 
 -----------------------
@@ -241,6 +243,10 @@ function AluraMasterLoot:OnClose(wndHandler, wndControl)
 end
 
 function AluraMasterLoot:OnRollForItem(wndHandler, wndControl)
+  self:PartyPrint("=======================================")
+  self:PartyPrint("Rolling now open for the following item")
+  self:PartyPrint(self.itemRoll:GetChatLinkString())
+  self:PartyPrint("=======================================")
   self.tRollers = {}
   self.itemRoll = wndControl:GetData()
   self.bInRollWindow = true
