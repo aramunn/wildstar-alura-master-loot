@@ -1,11 +1,11 @@
 local AluraMasterLoot = {
-  arData = {},
-  bRaidOnly = false,
-  nVScrollPos = 0,
-  nSortColumn = 0,
-  bSortAscending = true,
-  
-  tRaiders = {},
+  tSave = {
+    arData = {},
+    bRaidOnly = false,
+    nVScrollPos = 0,
+    nSortColumn = 0,
+    bSortAscending = true,
+  }
 }
 
 local knColumns     = string.byte("R") - string.byte("A") + 1
@@ -82,9 +82,9 @@ function AluraMasterLoot:UpdateGrid()
   if not self.wndMain or not self.wndMain:IsValid() then return end
   local wndGrid = self.wndMain:FindChild("Grid")
   wndGrid:DeleteAll()
-  if not self.arData then return end
+  if not self.tSave.arData then return end
   self:UpdateRaiders()
-  for _,arRow in ipairs(self.arData) do
+  for _,arRow in ipairs(self.tSave.arData) do
     self:AddRow(wndGrid, arRow)
   end
   if self.nSortColumn > 0 then
@@ -121,7 +121,7 @@ function AluraMasterLoot:OnImport(wndHandler, wndControl)
     self:Print("Failed to parse")
     return
   end
-  self.arData = arData
+  self.tSave.arData = arData
   self:UpdateGrid()
 end
 
@@ -158,22 +158,16 @@ end
 
 function AluraMasterLoot:OnSave(eLevel)
   if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return nil end
-  return {
-    arData = self.arData,
-    bRaidOnly = self.bRaidOnly,
-    nSortColumn = self.nSortColumn,
-    bSortAscending = self.bSortAscending,
-    nVScrollPos = self.nVScrollPos,
-  }
+  return self.tSave
 end
 
 function AluraMasterLoot:OnRestore(eLevel, tSave)
   if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return end
-  self.arData = tSave.arData
-  self.bRaidOnly = tSave.bRaidOnly
-  self.nSortColumn = tSave.nSortColumn
-  self.bSortAscending = tSave.bSortAscending
-  self.nVScrollPos = tSave.nVScrollPos
+  for k,v in pairs(tSave) do
+    if self.tSave[k] ~= nil then
+      self.tSave[k] = v
+    end
+  end
 end
 
 --------------------
