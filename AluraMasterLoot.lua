@@ -19,32 +19,12 @@ local ktNameMap = {
 
 local kstrRollRegex = "(%S+ %S+) rolls (%d+) %(1%-(%d+)%)"
 
-local karMods = {
-  {
-    strName = "Main Spec",
-    arCodes = { "MS" }
-    nPriority = 2,
-  },
-  {
-    strName = "Off Spec",
-    arCodes = { "OS" }
-    nPriority = 1,
-  },
-  {
-    strName = "Sidegrade",
-    arCodes = { "SG", "SS" }
-  },
+local ktModsMap = {
+  ["MS"] = "bIsMainSpec",
+  ["OS"] = "bIsOffSpec",
+  ["SG"] = "bIsSidegrade",
+  ["SS"] = "bIsSidegrade",
 }
-
-local ktModsMap = {}
-for _, tModInfo in ipairs(karMods) do
-  for _, strCode in ipairs(tModInfo.arCodes) do
-    ktModsMap[strCode] = {
-      strName = tModInfo.strName,
-      nPriority = tModInfo.nPriority or 0,
-    }
-  end
-end
 
 -------------
 -- General --
@@ -126,8 +106,8 @@ end
 function AluraMasterLoot:DetermineModifiers(strText)
   local tMods = {}
   for strWord in string.gmatch(strText, "[^ ]+") do
-    local tModInfo = ktModsMap[string.upper(strWord)]
-    if tModInfo then tMods[tModInfo.strName] = tModInfo end
+    local strMod = ktModsMap[string.upper(strWord)]
+    if strMod then tMods[strMod] = true end
   end
   return tMods
 end
@@ -136,7 +116,103 @@ function AluraMasterLoot:OnRollWindowEnd()
   self.bInRollWindow = false
   self:PartyPrint("============================")
   self:PartyPrint("Rolling has closed. Results:")
+  
+  -- local arResults = {}
+  -- for strName, tInfo in pairs(self.tRollers) do
+    -- tInfo.tRoll = tInfo.tRoll or {}
+    -- tInfo.tMods = tInfo.tMods or {}
+    -- if tInfo.tRoll.nRange == 100 then
+      -- local nPriority = 0
+      -- for _, tModInfo in pairs(tInfo.tMods) do
+        -- if tModInfo.nPriority > nPriority then
+          -- nPriority = tModInfo.nPriority
+        -- end
+      -- end
+      -- table.insert(arResults, {
+        -- strName = strName,
+        -- nRoll = tInfo.tRoll.nRoll,
+        -- nPriority = nPriority,
+        -- tMods = tInfo.tMods,
+      -- })
+    -- end
+  -- end
+  -- table.sort(arResults, function (a, b)
+    -- if a.nRoll ~= b.nRoll then
+      -- return a.nRoll > b.nRoll
+    -- elseif a.
+    -- end
+  -- end)
+  
+  -- local tResults = { None = {} }
+  -- for _, tModInfo in ipairs(karMods) do
+    -- tResults[tModInfo.strName] = {}
+  -- end
+  -- for strName, tInfo in pairs(self.tRollers) do
+    -- if tInfo.tRoll and tInfo.tRoll.nRange == 100 then
+      -- local tRollInfo = {
+        -- strName = strName,
+        -- nRoll = tInfo.tRoll.nRoll,
+      -- }
+      -- tInfo.tMods = tInfo.tMods or {}
+      -- local bNoMods = true
+      -- for strMod, bValue in pairs(tInfo.tMods) do
+        -- if bValue then
+          -- table.insert(tResults[strMod], tRollInfo)
+          -- bNoMods = false
+        -- end
+      -- end
+      -- if bNoMods then table.insert(tResults.None, tRollInfo) end
+    -- end
+  -- end
+  -- for _, tModInfo in ipairs(karMods) do
+    -- local arResults = tResults[tModInfo.strName]
+    -- table.sort(arResults, function (a, b)
+      -- if a.nRoll ~= b.nRoll then
+        -- return a.nRoll < b.nRoll
+      -- else
+        -- return a.strName < b.strName
+      -- end
+    -- end)
+    -- if #arResults > 0 then
+      -- self:PartyPrint("=== "..tModInfo.strName.." ===")
+      -- for _, tInfo in ipairs(arResults) do
+        -- self:PartyPrint(string.format("  %3d - %s", tInfo.nRoll, tInfo.strName))
+      -- end
+    -- end
+  -- end
+  
+  local arResults = {}
+  for strName, tInfo in pairs(self.tRollers) do
+    self:InsertRollResult(arResults, tInfo)
+  end
+  table.sort(arResults, function (a, b)
+    return self:RollResultSorter(a, b)
+  end)
+  for _, tResult in ipairs(arResults) do
+    self:PartyPrint(self:FormatRollResult(tResult))
+  end
   self:PartyPrint("============================")
+end
+
+function AluraMasterLoot:InsertRollResult(arResults, tInfo)
+  tInfo.tRoll = tInfo.tRoll or {}
+  tInfo.tMods = tInfo.tMods or {}
+  if tInfo.tRoll.nRange == 100 then
+    table.insert(arResults, {
+      strName = strName,
+      nRank = tRanks[strName],
+      tMods = tInfo.tMods,
+      nRoll = tInfo.tRoll.nRoll,
+    })
+  end
+end
+
+function AluraMasterLoot:RollResultSorter(tA, tB)
+  --TODO
+end
+
+function AluraMasterLoot:FormatRollResult(tResult)
+  --TODO
 end
 
 -----------------------
