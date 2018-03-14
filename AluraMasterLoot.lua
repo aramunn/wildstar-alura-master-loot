@@ -75,6 +75,12 @@ function AluraMasterLoot:CheckForRoll(strText)
   end
 end
 
+function AluraMasterLoot:CheckForRollModifiers(strName, strText)
+end
+
+function AluraMasterLoot:ParseItemRequest(strName, item, strText)
+end
+
 function AluraMasterLoot:OnRollWindowEnd()
   self.bInRollWindow = false
   --TODO determine winner
@@ -101,6 +107,19 @@ function AluraMasterLoot:HandleSystemMessage(tMessage)
 end
 
 function AluraMasterLoot:HandlePartyMessage(tMessage)
+  local strText, arItems = {}
+  for _, tSegment in ipairs(tMessage.arMessageSegments) do
+    if tSegment.strText then
+      strText = strText.." "..tSegment.strText
+    end
+    if tSegment.uItem then
+      table.insert(arItems, tSegment.uItem)
+    end
+  end
+  self:CheckForRollModifiers(tMessage.strSender, strText)
+  for _, item in ipairs(arItems) do
+    self:ParseItemRequest(tMessage.strSender, item, strText)
+  end
 end
 
 function AluraMasterLoot:OnChatMessage(channel, tMessage)
