@@ -17,6 +17,8 @@ local ktNameMap = {
   -- ["Aramunn"] = "Via Aramunn",
 }
 
+local kstrRollRegex = "(%S+ %S+) rolls (%d+) %(1%-(%d+)%)"
+
 -------------
 -- General --
 -------------
@@ -60,6 +62,19 @@ function AluraMasterLoot:UpdateRaiders()
   end
 end
 
+function AluraMasterLoot:CheckForRoll(strText)
+  if not self.bInRollWindow then return end
+  local strName, strRoll, strRange = string.match(strText, kstrRollRegex)
+  if strName and strRoll and strRange then
+    self.tRollers[strName] = self.tRollers[strName] or {}
+    if self.tRollers[strName].tRoll then return end
+    self.tRollers[strName].tRoll = {
+      nRoll = tonumber(strRoll),
+      nRange = tonumber(strRange),
+    }
+  end
+end
+
 function AluraMasterLoot:OnRollWindowEnd()
   self.bInRollWindow = false
   --TODO determine winner
@@ -78,6 +93,11 @@ function AluraMasterLoot:PartyPrint(message)
 end
 
 function AluraMasterLoot:HandleSystemMessage(tMessage)
+  for _, tSegment in ipairs(tMessage.arMessageSegments) do
+    if tSegment.strText then
+      self:CheckForRoll(tSegment.strText)
+    end
+  end
 end
 
 function AluraMasterLoot:HandlePartyMessage(tMessage)
