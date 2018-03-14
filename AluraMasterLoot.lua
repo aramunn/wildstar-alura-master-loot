@@ -1,10 +1,9 @@
 local AluraMasterLoot = {
-  tRanks = {},
   tRaiders = {},
   tRollers = {},
   tRequests = {},
   tSave = {
-    arData = {},
+    tRanks = {},
     bRaidOnly = false,
     nVScrollPos = 0,
     nSortColumn = 0,
@@ -39,12 +38,12 @@ function AluraMasterLoot:ImportCsv(strCsv)
     self:SystemPrint("Nothing to import")
     return
   end
-  local arDataTmp = self:ParseCsv(strCsv)
-  if not arDataTmp or #arDataTmp == 0 then
+  local arData = self:ParseCsv(strCsv)
+  if not arData or #arData == 0 then
     self:SystemPrint("Failed to parse")
     return
   end
-  self.tSave.arData = arDataTmp
+  self:UpdateRankData(arData)
   self:UpdateGrid()
 end
 
@@ -60,6 +59,29 @@ function AluraMasterLoot:ParseCsv(strCsv)
     end
   end
   return arTable
+end
+
+function AluraMasterLoot:UpdateRankData(arData)
+  self.tSave.tRanks = {}
+  for _, arRow in ipairs(arData) do
+    self:UpdateMemberRank(arRow)
+  end
+end
+
+function AluraMasterLoot:UpdateMemberRank(arRow)
+  local strName = arRow[knNameColumn]
+  local strValue = arRow[knRankColumn]
+  local nValue = tonumber(strValue)
+  self.tSave.tRanks[strName] = self:ConvertToRank(nValue)
+end
+
+function AluraMasterLoot:ConvertToRank(nValue)
+  if not nValue then return nil end
+  --TODO fix these cutoffs
+  if nValue > 3.5 then return 41 end
+  if nValue > 2.5 then return 32 end
+  if nValue > 1.5 then return 23 end
+  if nValue > 0.0 then return 14 end
 end
 
 function AluraMasterLoot:UpdateRaiders()
@@ -139,7 +161,7 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
   if tInfo.tRoll.nRange == 100 then
     local tResult = {
       strName = strName,
-      nRank = tRanks[strName],
+      nRank = self.tSave.tRanks[strName],
       nRoll = tInfo.tRoll.nRoll,
     }
     for k,v in pairs(tInfo.tMods) do
@@ -265,10 +287,10 @@ function AluraMasterLoot:UpdateGrid()
   if not self.wndMain or not self.wndMain:IsValid() then return end
   local wndGrid = self.wndMain:FindChild("Grid")
   wndGrid:DeleteAll()
-  if not self.tSave.arData then return end
+  if not self.tSave.tRanks then return end
   self:UpdateRaiders()
-  for _,arRow in ipairs(self.tSave.arData) do
-    self:AddRow(wndGrid, arRow)
+  for strName, nRank in pairs(self.tSave.tRanks) do
+    self:AddRow(wndGrid, strName, nRank)
   end
   if self.nSortColumn > 0 then
     wndGrid:SetSortColumn(self.nSortColumn, self.bSortAscending)
@@ -276,10 +298,13 @@ function AluraMasterLoot:UpdateGrid()
   wndGrid:SetVScrollPos(self.nVScrollPos)
 end
 
-function AluraMasterLoot:AddRow(wndGrid, arRow)
-  local strName = arRow[knNameColumn]
-  local strRank = arRow[knRankColumn]
-  if self.bRaidOnly and not self.tRaiders[strName] then return end
+function AluraMasterLoot:AddRow(wndGrid, strName, nRank)
+  if self.bRaidOnly then
+    if not self.tRaiders[strName] then
+      return
+    end
+  end
+  local strRank = "T"..tostring(nRank)
   local nRow = wndGrid:AddRow("blah")
   wndGrid:SetCellText(nRow, 1, strName)
   wndGrid:SetCellText(nRow, 2, strRank)
