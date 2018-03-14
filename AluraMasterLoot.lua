@@ -19,10 +19,32 @@ local ktNameMap = {
 
 local kstrRollRegex = "(%S+ %S+) rolls (%d+) %(1%-(%d+)%)"
 
-local ktModsMap = {
-  ["MS"] = "bIsMainSpec",
-  ["OS"] = "bIsOffSpec",
+local karMods = {
+  {
+    strName = "Main Spec",
+    arCodes = { "MS" }
+    nPriority = 2,
+  },
+  {
+    strName = "Off Spec",
+    arCodes = { "OS" }
+    nPriority = 1,
+  },
+  {
+    strName = "Sidegrade",
+    arCodes = { "SG", "SS" }
+  },
 }
+
+local ktModsMap = {}
+for _, tModInfo in ipairs(karMods) do
+  for _, strCode in ipairs(tModInfo.arCodes) do
+    ktModsMap[strCode] = {
+      strName = tModInfo.strName,
+      nPriority = tModInfo.nPriority or 0,
+    }
+  end
+end
 
 -------------
 -- General --
@@ -59,8 +81,8 @@ end
 function AluraMasterLoot:UpdateRaiders()
   self.tRaiders = {}
   local nMemberCount = GroupLib.GetMemberCount()
-  for nIdx = 1, nMemberCount do
-    local tMember = GroupLib.GetGroupMember(nIdx)
+  for idx = 1, nMemberCount do
+    local tMember = GroupLib.GetGroupMember(idx)
     local strName = tMember.strCharacterName
     strName = ktNameMap[strName] or strName
     self.tRaiders[strName] = true
@@ -102,14 +124,10 @@ function AluraMasterLoot:ParseItemRequest(strName, item, strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
-  local tMods = { arUnknowns = {} }
+  local tMods = {}
   for strWord in string.gmatch(strText, "[^ ]+") do
-    local strField = ktModsMap[string.upper(strWord)]
-    if strField then
-      tMods[strField] = true
-    else
-      table.insert(tMods.arUnknowns, strWord)
-    end
+    local tModInfo = ktModsMap[string.upper(strWord)]
+    if tModInfo then tMods[tModInfo.strName] = tModInfo end
   end
   return tMods
 end
