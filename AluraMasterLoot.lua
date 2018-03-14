@@ -1,7 +1,6 @@
 local AluraMasterLoot = {
   tRaiders = {},
-  tRollers = {},
-  tRequests = {},
+  tLootList = {},
   tSave = {
     tRanks = {},
     bRaidOnly = false,
@@ -97,20 +96,22 @@ end
 
 function AluraMasterLoot:UpdateLootList()
   local arLootList = GameLib.GetMasterLoot()
-  local tRequests = {}
+  local tLootList = {}
   for _, item in ipairs(arLootList) do
-    tRequests = self.tRequests[item.nLootId] or {}
+    tLootList = self.tLootList[item.nLootId] or {
+      tRequests = {}
+    }
   end
-  self.tRequests = tRequests
+  self.tLootList = tLootList
 end
 
 function AluraMasterLoot:CheckForRoll(strText)
-  if not self.bInRollWindow then return end
+  if not self.tRollInfo then return end
   local strName, strRoll, strRange = string.match(strText, kstrRollRegex)
   if strName and strRoll and strRange then
-    self.tRollers[strName] = self.tRollers[strName] or {}
-    if self.tRollers[strName].tRoll then return end
-    self.tRollers[strName].tRoll = {
+    self.tRollInfo.tRollers[strName] = self.tRollInfo.tRollers[strName] or {}
+    if self.tRollInfo.tRollers[strName].tRoll then return end
+    self.tRollInfo.tRollers[strName].tRoll = {
       nRoll = tonumber(strRoll),
       nRange = tonumber(strRange),
     }
@@ -118,15 +119,16 @@ function AluraMasterLoot:CheckForRoll(strText)
 end
 
 function AluraMasterLoot:CheckForRollModifiers(strName, strText)
-  if not self.bInRollWindow then return end
+  if not self.tRollInfo then return end
   if not (strName and strText) then return end
-  self.tRollers[strName] = self.tRollers[strName] or {}
-  self.tRollers[strName].tMods = DetermineModifiers(strText)
+  self.tRollInfo.tRollers[strName] = self.tRollInfo.tRollers[strName] or {}
+  self.tRollInfo.tRollers[strName].tMods = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
-  if not self.tRequests[item.nLootId] then return end
-  self.tRequests[item.nLootId][strName] = DetermineModifiers(strText)
+  local tItem = self.tLootList[item.nLootId]
+  if not tItem then return end
+  tItem.tRequests[strName] = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
@@ -139,20 +141,23 @@ function AluraMasterLoot:DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:OnRollWindowEnd()
-  self.bInRollWindow = false
+  if not self.tRollInfo then
+    self:SystemPrint("Roll timer ended but no roll info??")
+    return
+  end
   self:PartyPrint("============================")
   self:PartyPrint("Rolling has closed. Results:")
   local arResults = {}
-  for strName, tInfo in pairs(self.tRollers) do
+  for strName, tInfo in pairs(self.tRollInfo.tRollers) do
     self:InsertRollResult(arResults, tInfo)
   end
-  table.sort(arResults, function (a, b)
-    return self:RollResultSorter(a, b)
-  end)
+  table.sort(arResults, self.RollResultSorter)
   for _, tResult in ipairs(arResults) do
     self:PartyPrint(self:FormatRollResult(tResult))
   end
   self:PartyPrint("============================")
+  self.tLootList[self.tRollInfo.nLootId].arRollResults = arResults
+  self.tRollInfo = nil
 end
 
 function AluraMasterLoot:InsertRollResult(arResults, tInfo)
@@ -351,13 +356,15 @@ function AluraMasterLoot:OnClose(wndHandler, wndControl)
 end
 
 function AluraMasterLoot:OnRollForItem(wndHandler, wndControl)
+  local item = wndControl:GetData()
   self:PartyPrint("=======================================")
   self:PartyPrint("Rolling now open for the following item")
-  self:PartyPrint(self.itemRoll:GetChatLinkString())
+  self:PartyPrint(item:GetChatLinkString())
   self:PartyPrint("=======================================")
-  self.tRollers = {}
-  self.itemRoll = wndControl:GetData()
-  self.bInRollWindow = true
+  self.tRollInfo = {
+    nLootId = item.nLootId,
+    tRollers = {},
+  }
   ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
 end
 
