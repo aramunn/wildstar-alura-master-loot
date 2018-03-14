@@ -7,7 +7,6 @@ local AluraMasterLoot = {
     bSortAscending = true,
     nRollSeconds = 16,
   }
-  tRequests = {}
 }
 
 local knColumns     = string.byte("R") - string.byte("A") + 1
@@ -87,13 +86,13 @@ end
 
 function AluraMasterLoot:CheckForRollModifiers(strName, strText)
   if not self.bInRollWindow then return end
-  if not strName or not strText then return end
+  if not (strName and strText) then return end
   self.tRollers[strName] = self.tRollers[strName] or {}
   self.tRollers[strName].tMods = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
-  if not self.tRequests[item.nLootId] then return end
+  if not (self.tRequests and self.tRequests[item.nLootId]) then return end
   self.tRequests[item.nLootId][strName] = DetermineModifiers(strText)
 end
 
