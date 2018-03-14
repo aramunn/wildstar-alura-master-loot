@@ -77,6 +77,21 @@ function AluraMasterLoot:PartyPrint(message)
   ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, message, "AML")
 end
 
+function AluraMasterLoot:HandleSystemMessage(tMessage)
+end
+
+function AluraMasterLoot:HandlePartyMessage(tMessage)
+end
+
+function AluraMasterLoot:OnChatMessage(channel, tMessage)
+  local eType = channel:GetType()
+  if eType == ChatSystemLib.ChatChannel_System then
+    self:HandleSystemMessage(tMessage)
+  elseif eType == ChatSystemLib.ChatChannel_Party then
+    self:HandlePartyMessage(tMessage)
+  end
+end
+
 -----------------
 -- UI Updating --
 -----------------
@@ -203,6 +218,7 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "LoadMainWindow", self)
+  Apollo.RegisterEventHandler("ChatMessage", "OnChatMessage", self)
   Apollo.RegisterEventHandler("Group_Join",   "UpdateGrid", self)
   Apollo.RegisterEventHandler("Group_Left",   "UpdateGrid", self)
   Apollo.RegisterEventHandler("Group_Add",    "UpdateGrid", self)
