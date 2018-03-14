@@ -5,6 +5,7 @@ local AluraMasterLoot = {
     nVScrollPos = 0,
     nSortColumn = 0,
     bSortAscending = true,
+    nRollSeconds = 16,
   }
 }
 
@@ -57,6 +58,11 @@ function AluraMasterLoot:UpdateRaiders()
     strName = ktNameMap[strName] or strName
     self.tRaiders[strName] = true
   end
+end
+
+function AluraMasterLoot:OnRollWindowEnd()
+  self.bInRollWindow = false
+  --TODO determine winner
 end
 
 -----------------------
@@ -145,6 +151,13 @@ function AluraMasterLoot:OnClose(wndHandler, wndControl)
   if self.wndMain and self.wndMain:IsValid() then
     self.wndMain:Destroy()
   end
+end
+
+function AluraMasterLoot:OnRollForItem(wndHandler, wndControl)
+  self.tRollers = {}
+  self.itemRoll = wndControl:GetData()
+  self.bInRollWindow = true
+  ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
 end
 
 ----------------------------
