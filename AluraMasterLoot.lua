@@ -19,6 +19,11 @@ local ktNameMap = {
 
 local kstrRollRegex = "(%S+ %S+) rolls (%d+) %(1%-(%d+)%)"
 
+local ktModsMap = {
+  ["MS"] = "bIsMainSpec",
+  ["OS"] = "bIsOffSpec",
+}
+
 -------------
 -- General --
 -------------
@@ -97,7 +102,16 @@ function AluraMasterLoot:ParseItemRequest(strName, item, strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
-  return {}
+  local tMods = { arUnknowns = {} }
+  for strWord in string.gmatch(strText, "[^ ]+") do
+    local strField = ktModsMap[string.upper(strWord)]
+    if strField then
+      tMods[strField] = true
+    else
+      table.insert(tMods.arUnknowns, strWord)
+    end
+  end
+  return tMods
 end
 
 function AluraMasterLoot:OnRollWindowEnd()
