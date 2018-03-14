@@ -151,9 +151,11 @@ function AluraMasterLoot:OnRollWindowEnd()
   for strName, tInfo in pairs(self.tRollInfo.tRollers) do
     self:InsertRollResult(arResults, tInfo)
   end
-  table.sort(arResults, self.RollResultSorter)
+  table.sort(arResults, self.ResultSorter)
   for _, tResult in ipairs(arResults) do
-    self:PartyPrint(self:FormatRollResult(tResult))
+    local strRoll = self:GetResultPrefix(tResult)
+    strRoll = strRoll..string.format("%3d ", tResult.nRoll)
+    self:PartyPrint(strRoll..tResult.strName)
   end
   self:PartyPrint("============================")
   self.tLootList[self.tRollInfo.nLootId].arRollResults = arResults
@@ -176,7 +178,7 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
   end
 end
 
-function AluraMasterLoot:RollResultSorter(tA, tB)
+function AluraMasterLoot:ResultSorter(tA, tB)
   local arInfo = {
     {
       strKey = "nRank",
@@ -219,15 +221,13 @@ function AluraMasterLoot:RollResultSorter(tA, tB)
   return tA < tB
 end
 
-function AluraMasterLoot:FormatRollResult(tResult)
+function AluraMasterLoot:GetResultPrefix(tResult)
   return string.format(
-    "%s %s %s %s %3d %s",
+    "%s %s %s %s ",
     tResult.nRank and "T"..tostring(tResult.nRank) or "  ",
     tResult.bIsMainSpec and "MS" or "  ",
     tResult.bIsOffSpec and "OS" or "  ",
     tResult.bIsSidegrade and "SG" or "  ",
-    tResult.nRoll or 0,
-    tResult.strName,
   )
 end
 
@@ -248,21 +248,53 @@ end
 function AluraMasterLoot:UpdateLootSquid(ref, item)
   local tInfo = self.tLootList[item.nLootId]
   if not tInfo then return end
+  local arResults = {}
   if tInfo.arRollResults then
-    for _, tResult in ipairs(tInfo.arRollResults) do
-      local wndPlayer = ref.tPlayerWindows[tResult.strName]
-      if wndPlayer then
-        --TODO
-      end
-    end
+    arResults = tInfo.arRollResults
   else
     for strName, tMods in pairs(tInfo.tRequests) do
-      local wndPlayer = ref.tPlayerWindows[strName]
-      if wndPlayer then
-        --TODO
+      local tResult = {
+        strName = strName,
+        nRank = self.tSave.tRanks[strName],
+      }
+      for k,v in pairs(tMods) do
+        tResult[k] = v
       end
+      table.insert(arResults, tResult)
+    end
+    table.sort(arResults, self.ResultSorter)
+  end
+  local tPlayerInfo = {}
+  for idx, tResult in ipairs(tInfo.arRollResults) do
+    local strPrefix = self:GetResultPrefix(tResult)
+    if tResult.nRoll then
+      strPrefix = strPrefix..string.format("%3d ", tResult.nRoll)
+    end
+    tPlayerInfo[tResult.strName] = {
+      nPosition = idx,
+      strPrefix = strPrefix,
+    }
+  end
+  for strName, wndPlayer in pairs(ref.tPlayerWindows) do
+    local tInfo = tPlayerInfo[strName]
+    if tInfo then
+      local wndName = wndPlayer:FindChild("Name")
+      wndName:SetText(tInfo.strPrefix..wndName:GetText())
     end
   end
+  ref.wndPlayerList:ArrangeChildrenVert(Window.CodeEnumArrangeOrigin.LeftOrTop, function(a, b)
+    local aName = a:GetData().name
+    local bName = b:GetData().name
+    local aInfo = tPlayerInfo[aName]
+    local bInfo = tPlayerInfo[bName]
+    if aInfo and bInfo then
+      return aInfo.nPosition < bInfo.nPosition
+    elseif aInfo or bInfo then
+      return aInfo ~= nil
+    else
+      return aName < bName
+    end
+  end)
 end
 
 -----------------------
