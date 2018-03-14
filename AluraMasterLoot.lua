@@ -20,12 +20,18 @@ local ktNameMap = {
 -- General --
 -------------
 
-function AluraMasterLoot:FindSystemChannel()
-  for idx, channelCurrent in ipairs(ChatSystemLib.GetChannels()) do
-    if channelCurrent:GetName() == "System" then
-      self.system = channelCurrent:GetUniqueId()
-    end
+function AluraMasterLoot:ImportCsv(strCsv)
+  if not strCsv then
+    self:SystemPrint("Nothing to import")
+    return
   end
+  local arDataTmp = self:ParseCsv(strCsv)
+  if not arDataTmp or #arDataTmp == 0 then
+    self:SystemPrint("Failed to parse")
+    return
+  end
+  self.tSave.arData = arDataTmp
+  self:UpdateGrid()
 end
 
 function AluraMasterLoot:ParseCsv(strCsv)
@@ -57,12 +63,12 @@ end
 -- Chat Input/Output --
 -----------------------
 
-function AluraMasterLoot:Print(message)
-  if self.system then
-    ChatSystemLib.PostOnChannel(self.system, message, "")
-  else
-    Print(message)
-  end
+function AluraMasterLoot:SystemPrint(message)
+  ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_System, message, "AML")
+end
+
+function AluraMasterLoot:PartyPrint(message)
+  ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, message, "AML")
 end
 
 -----------------
@@ -111,18 +117,7 @@ function AluraMasterLoot:OnImport(wndHandler, wndControl)
   local wndClipboard = self.wndMain:FindChild("Clipboard")
   wndClipboard:SetText("")
   wndClipboard:PasteTextFromClipboard()
-  local strText = wndClipboard:GetText()
-  if not strText then
-    self:Print("Nothing to import")
-    return
-  end
-  local arData = self:ParseCsv(strText)
-  if not arData or #arData == 0 then
-    self:Print("Failed to parse")
-    return
-  end
-  self.tSave.arData = arData
-  self:UpdateGrid()
+  self:ImportCsv(wndClipboard:GetText())
 end
 
 function AluraMasterLoot:OnRaidCheck(wndHandler, wndControl)
@@ -199,7 +194,6 @@ function AluraMasterLoot:OnDocumentReady()
   Apollo.RegisterEventHandler("Group_Left",   "UpdateGrid", self)
   Apollo.RegisterEventHandler("Group_Add",    "UpdateGrid", self)
   Apollo.RegisterEventHandler("Group_Remove", "UpdateGrid", self)
-  self:FindSystemChannel()
 end
 
 local AluraMasterLootInst = AluraMasterLoot:new()
