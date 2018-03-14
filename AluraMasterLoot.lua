@@ -13,9 +13,12 @@ local knNameColumn  = string.byte("A") - string.byte("A") + 1
 local knRankColumn  = string.byte("R") - string.byte("A") + 1
 
 local ktNameMap = {
-  ["Aramunn"] = "Via Aramunn",
-  ["Ele"] = "Ele Yasam",
+  -- ["Aramunn"] = "Via Aramunn",
 }
+
+-------------
+-- General --
+-------------
 
 function AluraMasterLoot:FindSystemChannel()
   for idx, channelCurrent in ipairs(ChatSystemLib.GetChannels()) do
@@ -25,6 +28,35 @@ function AluraMasterLoot:FindSystemChannel()
   end
 end
 
+function AluraMasterLoot:ParseCsv(strCsv)
+  local arTable = {}
+  for line in strCsv:gmatch("[^\r\n]+") do
+    local arRow = {}
+    for cell in line:gmatch("[^\t]+") do
+      table.insert(arRow, cell)
+    end
+    if #arRow == knColumns then
+      table.insert(arTable, arRow)
+    end
+  end
+  return arTable
+end
+
+function AluraMasterLoot:UpdateRaiders()
+  self.tRaiders = {}
+  local nMemberCount = GroupLib.GetMemberCount()
+  for nIdx = 1, nMemberCount do
+    local tMember = GroupLib.GetGroupMember(nIdx)
+    local strName = tMember.strCharacterName
+    strName = ktNameMap[strName] or strName
+    self.tRaiders[strName] = true
+  end
+end
+
+-----------------------
+-- Chat Input/Output --
+-----------------------
+
 function AluraMasterLoot:Print(message)
   if self.system then
     ChatSystemLib.PostOnChannel(self.system, message, "")
@@ -32,6 +64,10 @@ function AluraMasterLoot:Print(message)
     Print(message)
   end
 end
+
+-----------------
+-- UI Updating --
+-----------------
 
 function AluraMasterLoot:LoadMainWindow()
   if self.wndMain and self.wndMain:IsValid() then
@@ -42,15 +78,34 @@ function AluraMasterLoot:LoadMainWindow()
   self:UpdateGrid()
 end
 
-function AluraMasterLoot:OnRaidCheck(wndHandler, wndControl)
-  self.bRaidOnly = true
-  self:UpdateGrid()
+function AluraMasterLoot:UpdateGrid()
+  if not self.wndMain or not self.wndMain:IsValid() then return end
+  local wndGrid = self.wndMain:FindChild("Grid")
+  wndGrid:DeleteAll()
+  if not self.arData then return end
+  self:UpdateRaiders()
+  for _,arRow in ipairs(self.arData) do
+    self:AddRow(wndGrid, arRow)
+  end
+  if self.nSortColumn > 0 then
+    wndGrid:SetSortColumn(self.nSortColumn, self.bSortAscending)
+  end
+  wndGrid:SetVScrollPos(self.nVScrollPos)
 end
 
-function AluraMasterLoot:OnRaidUncheck(wndHandler, wndControl)
-  self.bRaidOnly = false
-  self:UpdateGrid()
+function AluraMasterLoot:AddRow(wndGrid, arRow)
+  local strName = arRow[knNameColumn]
+  local strRank = arRow[knRankColumn]
+  if self.bRaidOnly and not self.tRaiders[strName] then return end
+  local nRow = wndGrid:AddRow("blah")
+  wndGrid:SetCellText(nRow, 1, strName)
+  wndGrid:SetCellText(nRow, 2, strRank)
+  wndGrid:SetCellSortText(nRow, 2, strRank..strName)
 end
+
+---------------
+-- UI Events --
+---------------
 
 function AluraMasterLoot:OnImport(wndHandler, wndControl)
   local wndClipboard = self.wndMain:FindChild("Clipboard")
@@ -70,54 +125,14 @@ function AluraMasterLoot:OnImport(wndHandler, wndControl)
   self:UpdateGrid()
 end
 
-function AluraMasterLoot:ParseCsv(strCsv)
-  local arTable = {}
-  for line in strCsv:gmatch("[^\r\n]+") do
-    local arRow = {}
-    for cell in line:gmatch("[^\t]+") do
-      table.insert(arRow, cell)
-    end
-    if #arRow == knColumns then
-      table.insert(arTable, arRow)
-    end
-  end
-  return arTable
+function AluraMasterLoot:OnRaidCheck(wndHandler, wndControl)
+  self.bRaidOnly = true
+  self:UpdateGrid()
 end
 
-function AluraMasterLoot:UpdateGrid()
-  if not self.wndMain or not self.wndMain:IsValid() then return end
-  local wndGrid = self.wndMain:FindChild("Grid")
-  wndGrid:DeleteAll()
-  if not self.arData then return end
-  self:UpdateRaiders()
-  for _,arRow in ipairs(self.arData) do
-    self:AddRow(wndGrid, arRow)
-  end
-  if self.nSortColumn > 0 then
-    wndGrid:SetSortColumn(self.nSortColumn, self.bSortAscending)
-  end
-  wndGrid:SetVScrollPos(self.nVScrollPos)
-end
-
-function AluraMasterLoot:UpdateRaiders()
-  self.tRaiders = {}
-  local nMemberCount = GroupLib.GetMemberCount()
-  for nIdx = 1, nMemberCount do
-    local tMember = GroupLib.GetGroupMember(nIdx)
-    local strName = tMember.strCharacterName
-    strName = ktNameMap[strName] or strName
-    self.tRaiders[strName] = true
-  end
-end
-
-function AluraMasterLoot:AddRow(wndGrid, arRow)
-  local strName = arRow[knNameColumn]
-  local strRank = arRow[knRankColumn]
-  if self.bRaidOnly and not self.tRaiders[strName] then return end
-  local nRow = wndGrid:AddRow("blah")
-  wndGrid:SetCellText(nRow, 1, strName)
-  wndGrid:SetCellText(nRow, 2, strRank)
-  wndGrid:SetCellSortText(nRow, 2, strRank..strName)
+function AluraMasterLoot:OnRaidUncheck(wndHandler, wndControl)
+  self.bRaidOnly = false
+  self:UpdateGrid()
 end
 
 function AluraMasterLoot:OnMouseButtonUp(wndHandler, wndControl)
@@ -136,6 +151,10 @@ function AluraMasterLoot:OnClose(wndHandler, wndControl)
     self.wndMain:Destroy()
   end
 end
+
+----------------------------
+-- State Saving/Restoring --
+----------------------------
 
 function AluraMasterLoot:OnSave(eLevel)
   if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return nil end
@@ -157,6 +176,10 @@ function AluraMasterLoot:OnRestore(eLevel, tSave)
   self.nVScrollPos = tSave.nVScrollPos
 end
 
+--------------------
+-- Initialization --
+--------------------
+
 function AluraMasterLoot:new(o)
   o = o or {}
   setmetatable(o, self)
@@ -177,9 +200,10 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc then return end
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
-  Apollo.RegisterEventHandler("Group_Join", "UpdateGrid", self)
-  Apollo.RegisterEventHandler("Group_Left", "UpdateGrid", self)
-  Apollo.RegisterEventHandler("Group_Add", "UpdateGrid", self)
+  Apollo.RegisterSlashCommand("aml", "LoadMainWindow", self)
+  Apollo.RegisterEventHandler("Group_Join",   "UpdateGrid", self)
+  Apollo.RegisterEventHandler("Group_Left",   "UpdateGrid", self)
+  Apollo.RegisterEventHandler("Group_Add",    "UpdateGrid", self)
   Apollo.RegisterEventHandler("Group_Remove", "UpdateGrid", self)
   self:FindSystemChannel()
 end
