@@ -7,6 +7,7 @@ local AluraMasterLoot = {
     bSortAscending = true,
     nRollSeconds = 16,
   }
+  tRequests = {}
 }
 
 local knColumns     = string.byte("R") - string.byte("A") + 1
@@ -83,6 +84,9 @@ function AluraMasterLoot:CheckForRollModifiers(strName, strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
+  --TODO can use item as key?
+  self.tRequests[item] = self.tRequests[item] or {}
+  self.tRequests[item][strName] = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
