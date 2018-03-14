@@ -133,17 +133,58 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
   tInfo.tRoll = tInfo.tRoll or {}
   tInfo.tMods = tInfo.tMods or {}
   if tInfo.tRoll.nRange == 100 then
-    table.insert(arResults, {
+    local tResult = {
       strName = strName,
       nRank = tRanks[strName],
-      tMods = tInfo.tMods,
       nRoll = tInfo.tRoll.nRoll,
-    })
+    }
+    for k,v in pairs(tInfo.tMods) do
+      tResult[k] = v
+    end
+    table.insert(arResults, tResult)
   end
 end
 
 function AluraMasterLoot:RollResultSorter(tA, tB)
-  --TODO
+  local arInfo = { {
+      strKey = "nRank",
+      funcRet = function(a, b)
+        return a < b
+      end
+    }, {
+      strKey = "bIsMainSpec",
+      funcRet = function(a, b)
+        return a
+      end
+    }, {
+      strKey = "bIsOffSpec",
+      funcRet = function(a, b)
+        return a
+      end
+    }, {
+      strKey = "nRoll",
+      funcRet = function(a, b)
+        return a > b
+      end
+    }, {
+      strKey = "strName",
+      funcRet = function(a, b)
+        return a < b
+      end
+    }
+  }
+  for _, tInfo in ipairs(arInfo) do
+    local a = tA[tInfo.strKey]
+    local b = tB[tInfo.strKey]
+    if a ~= b then
+      if a == nil or b == nil then
+        return a ~= nil
+      else
+        return tInfo.funcRet(a, b)
+      end
+    end
+  end
+  return tA < tB
 end
 
 function AluraMasterLoot:FormatRollResult(tResult)
