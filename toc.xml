@@ -1,0 +1,4 @@
+<Addon Author="Aramunn" APIVersion="16" Version="2.0" Name="AluraMasterLoot" Description="Helper for Alura&apos;s Looting Systems">
+    <Script Name="AluraMasterLoot.lua"/>
+    <Form Name="AluraMasterLoot.xml"/>
+</Addon>
