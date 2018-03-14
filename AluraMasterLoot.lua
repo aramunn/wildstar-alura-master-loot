@@ -76,9 +76,17 @@ function AluraMasterLoot:CheckForRoll(strText)
 end
 
 function AluraMasterLoot:CheckForRollModifiers(strName, strText)
+  if not self.bInRollWindow then return end
+  if not strName or not strText then return end
+  self.tRollers[strName] = self.tRollers[strName] or {}
+  self.tRollers[strName].tMods = DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
+end
+
+function AluraMasterLoot:DetermineModifiers(strText)
+  return {}
 end
 
 function AluraMasterLoot:OnRollWindowEnd()
