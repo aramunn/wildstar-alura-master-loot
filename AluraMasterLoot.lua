@@ -75,12 +75,11 @@ function AluraMasterLoot:UpdateMemberRank(arRow)
 end
 
 function AluraMasterLoot:ConvertToRank(nValue)
-  if not nValue then return nil end
-  --TODO fix these cutoffs
-  if nValue > 3.5 then return 41 end
-  if nValue > 2.5 then return 32 end
-  if nValue > 1.5 then return 23 end
-  if nValue > 0.0 then return 14 end
+  if nValue then
+    if nValue > 2.75 then return "T1" end
+    if nValue >= 2.0 then return "T2" end
+  end
+  return "T3"
 end
 
 function AluraMasterLoot:UpdateRaiders()
@@ -168,7 +167,7 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
   if tInfo.tRoll.nRange == 100 then
     local tResult = {
       strName = strName,
-      nRank = self.tSave.tRanks[strName],
+      strRank = self.tSave.tRanks[strName],
       nRoll = tInfo.tRoll.nRoll,
     }
     for k,v in pairs(tInfo.tMods) do
@@ -181,7 +180,7 @@ end
 function AluraMasterLoot:ResultSorter(tA, tB)
   local arInfo = {
     {
-      strKey = "nRank",
+      strKey = "strRank",
       funcRet = function(a, b)
         return a < b
       end
@@ -224,10 +223,10 @@ end
 function AluraMasterLoot:GetResultPrefix(tResult)
   return string.format(
     "%s %s %s %s ",
-    tResult.nRank and "T"..tostring(tResult.nRank) or "  ",
+    tResult.strRank or "  ",
     tResult.bIsMainSpec and "MS" or "  ",
     tResult.bIsOffSpec and "OS" or "  ",
-    tResult.bIsSidegrade and "SG" or "  ",
+    tResult.bIsSidegrade and "SG" or "  "
   )
 end
 
@@ -255,7 +254,7 @@ function AluraMasterLoot:UpdateLootSquid(ref, item)
     for strName, tMods in pairs(tInfo.tRequests) do
       local tResult = {
         strName = strName,
-        nRank = self.tSave.tRanks[strName],
+        strRank = self.tSave.tRanks[strName],
       }
       for k,v in pairs(tMods) do
         tResult[k] = v
@@ -351,7 +350,7 @@ function AluraMasterLoot:LoadMainWindow()
     self.wndMain:Destroy()
   end
   self.wndMain = Apollo.LoadForm(self.xmlDoc, "Main", nil, self)
-  self.wndMain:FindChild("Raid"):SetCheck(self.bRaidOnly)
+  self.wndMain:FindChild("Raid"):SetCheck(self.tSave.bRaidOnly)
   self:UpdateGrid()
 end
 
@@ -361,22 +360,21 @@ function AluraMasterLoot:UpdateGrid()
   wndGrid:DeleteAll()
   if not self.tSave.tRanks then return end
   self:UpdateRaiders()
-  for strName, nRank in pairs(self.tSave.tRanks) do
-    self:AddRow(wndGrid, strName, nRank)
+  for strName, strRank in pairs(self.tSave.tRanks) do
+    self:AddRow(wndGrid, strName, strRank)
   end
-  if self.nSortColumn > 0 then
-    wndGrid:SetSortColumn(self.nSortColumn, self.bSortAscending)
+  if self.tSave.nSortColumn > 0 then
+    wndGrid:SetSortColumn(self.tSave.nSortColumn, self.tSave.bSortAscending)
   end
-  wndGrid:SetVScrollPos(self.nVScrollPos)
+  wndGrid:SetVScrollPos(self.tSave.nVScrollPos)
 end
 
-function AluraMasterLoot:AddRow(wndGrid, strName, nRank)
-  if self.bRaidOnly then
+function AluraMasterLoot:AddRow(wndGrid, strName, strRank)
+  if self.tSave.bRaidOnly then
     if not self.tRaiders[strName] then
       return
     end
   end
-  local strRank = "T"..tostring(nRank)
   local nRow = wndGrid:AddRow("blah")
   wndGrid:SetCellText(nRow, 1, strName)
   wndGrid:SetCellText(nRow, 2, strRank)
@@ -395,24 +393,24 @@ function AluraMasterLoot:OnImport(wndHandler, wndControl)
 end
 
 function AluraMasterLoot:OnRaidCheck(wndHandler, wndControl)
-  self.bRaidOnly = true
+  self.tSave.bRaidOnly = true
   self:UpdateGrid()
 end
 
 function AluraMasterLoot:OnRaidUncheck(wndHandler, wndControl)
-  self.bRaidOnly = false
+  self.tSave.bRaidOnly = false
   self:UpdateGrid()
 end
 
 function AluraMasterLoot:OnMouseButtonUp(wndHandler, wndControl)
   local wndGrid = self.wndMain:FindChild("Grid")
-  self.nSortColumn = wndGrid:GetSortColumn()
-  self.bSortAscending = wndGrid:IsSortAscending()
+  self.tSave.nSortColumn = wndGrid:GetSortColumn()
+  self.tSave.bSortAscending = wndGrid:IsSortAscending()
 end
 
 function AluraMasterLoot:OnMouseWheel(wndHandler, wndControl)
   local wndGrid = self.wndMain:FindChild("Grid")
-  self.nVScrollPos = wndGrid:GetVScrollPos()
+  self.tSave.nVScrollPos = wndGrid:GetVScrollPos()
 end
 
 function AluraMasterLoot:OnClose(wndHandler, wndControl)
