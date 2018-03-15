@@ -97,7 +97,7 @@ function AluraMasterLoot:UpdateLootList()
   local arLootList = GameLib.GetMasterLoot()
   local tLootList = {}
   for _, item in ipairs(arLootList) do
-    tLootList = self.tLootList[item.nLootId] or {
+    tLootList[item.nLootId] = self.tLootList[item.nLootId] or {
       tRequests = {}
     }
   end
@@ -121,13 +121,13 @@ function AluraMasterLoot:CheckForRollModifiers(strName, strText)
   if not self.tRollInfo then return end
   if not (strName and strText) then return end
   self.tRollInfo.tRollers[strName] = self.tRollInfo.tRollers[strName] or {}
-  self.tRollInfo.tRollers[strName].tMods = DetermineModifiers(strText)
+  self.tRollInfo.tRollers[strName].tMods = self:DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
   local tItem = self.tLootList[item.nLootId]
   if not tItem then return end
-  tItem.tRequests[strName] = DetermineModifiers(strText)
+  tItem.tRequests[strName] = self:DetermineModifiers(strText)
 end
 
 function AluraMasterLoot:DetermineModifiers(strText)
@@ -148,7 +148,7 @@ function AluraMasterLoot:OnRollWindowEnd()
   self:PartyPrint("Rolling has closed. Results:")
   local arResults = {}
   for strName, tInfo in pairs(self.tRollInfo.tRollers) do
-    self:InsertRollResult(arResults, tInfo)
+    self:InsertRollResult(arResults, strName, tInfo)
   end
   table.sort(arResults, self.ResultSorter)
   for _, tResult in ipairs(arResults) do
@@ -161,7 +161,7 @@ function AluraMasterLoot:OnRollWindowEnd()
   self.tRollInfo = nil
 end
 
-function AluraMasterLoot:InsertRollResult(arResults, tInfo)
+function AluraMasterLoot:InsertRollResult(arResults, strName, tInfo)
   tInfo.tRoll = tInfo.tRoll or {}
   tInfo.tMods = tInfo.tMods or {}
   if tInfo.tRoll.nRange == 100 then
@@ -178,6 +178,9 @@ function AluraMasterLoot:InsertRollResult(arResults, tInfo)
 end
 
 function AluraMasterLoot:ResultSorter(tA, tB)
+  if not tA or not tB then
+    return tA ~= nil
+  end
   local arInfo = {
     {
       strKey = "strRank",
@@ -331,7 +334,8 @@ function AluraMasterLoot:HandleSystemMessage(tMessage)
 end
 
 function AluraMasterLoot:HandlePartyMessage(tMessage)
-  local strText, arItems = {}
+  local strText = ""
+  local arItems = {}
   for _, tSegment in ipairs(tMessage.arMessageSegments) do
     if tSegment.strText then
       strText = strText.." "..tSegment.strText
@@ -433,17 +437,17 @@ function AluraMasterLoot:OnClose(wndHandler, wndControl)
   end
 end
 
-function AluraMasterLoot:OnRollForItem(wndHandler, wndControl)
+function AluraMasterLoot:OnOpenRoll(wndHandler, wndControl)
   local item = wndControl:GetData()
   self:PartyPrint("=======================================")
   self:PartyPrint("Rolling now open for the following item")
-  self:PartyPrint(item:GetChatLinkString())
+  self:PartyPrint(item.itemDrop:GetChatLinkString())
   self:PartyPrint("=======================================")
   self.tRollInfo = {
     nLootId = item.nLootId,
     tRollers = {},
   }
-  ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
+  self.timerRoll = ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
 end
 
 ----------------------------
