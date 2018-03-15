@@ -21,4 +21,9 @@
         </Control>
         <Control Class="EditBox" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="0" BAnchorPoint="1" BAnchorOffset="0" RelativeToClient="1" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="Clipboard" TooltipColor="" Visible="0" HideInEditor="1"/>
     </Form>
+    <Form Class="Window" LAnchorPoint="1" LAnchorOffset="-130" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="-40" BAnchorPoint="0" BAnchorOffset="30" RelativeToClient="1" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="OpenRoll" TooltipColor="" Picture="1" IgnoreMouse="1" Sprite="CRB_UIKitSprites:spr_tableheading" NoClip="0" NewWindowDepth="1" TextId="">
+        <Control Class="Button" Base="BK3:btnHolo_Btn_Mega" Font="DefaultButton" ButtonType="PushButton" RadioGroup="" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="3" RAnchorPoint="1" RAnchorOffset="0" BAnchorPoint="1" BAnchorOffset="-3" DT_VCENTER="1" DT_CENTER="1" BGColor="UI_BtnBGDefault" TextColor="UI_BtnTextDefault" NormalTextColor="UI_BtnTextDefault" PressedTextColor="UI_BtnTextDefault" FlybyTextColor="UI_BtnTextDefault" PressedFlybyTextColor="UI_BtnTextDefault" DisabledTextColor="UI_BtnTextDefault" TooltipType="OnCursor" Name="Button" TooltipColor="" NoClip="0" Tooltip="" FocusedTextColor="ffffffff" Text="Open Roll" TextId="">
+            <Event Name="ButtonSignal" Function="OnOpenRoll"/>
+        </Control>
+    </Form>
 </Forms>
