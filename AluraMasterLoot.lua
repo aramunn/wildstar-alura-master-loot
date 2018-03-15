@@ -157,7 +157,12 @@ function AluraMasterLoot:OnRollWindowEnd()
     self:PartyPrint(strRoll..tResult.strName)
   end
   self:PartyPrint("============================")
-  self.tLootList[self.tRollInfo.nLootId].arRollResults = arResults
+  local tLootInfo = self.tLootList[self.tRollInfo.nLootId]
+  if not tLootInfo then
+    self:SystemPrint("No longer in the loot table?")
+    return
+  end
+  tLootInfo.arRollResults = arResults
   self.tRollInfo = nil
 end
 
