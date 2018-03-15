@@ -237,14 +237,28 @@ end
 function AluraMasterLoot:HookLootSquid()
   local addon = Apollo.GetAddon("LootSquid")
   if not addon then return end
-  local func = addon.RefreshPlayerList
+  local funcItems = addon.RefreshItemList
+  addon.RefreshItemList = function(ref, ...)
+    funcItems(ref, ...)
+    self:UpdateLootSquidItems(ref)
+  end
+  local funcPlayers = addon.RefreshPlayerList
   addon.RefreshPlayerList = function(ref, item, ...)
-    func(ref, item, ...)
-    self:UpdateLootSquid(ref, item)
+    funcPlayers(ref, item, ...)
+    self:UpdateLootSquidPlayers(ref, item)
   end
 end
 
-function AluraMasterLoot:UpdateLootSquid(ref, item)
+function AluraMasterLoot:UpdateLootSquidItems(ref)
+  if not GroupLib.AmILeader() then return end
+  for _, wndItem in ipairs(ref.tItemWindows) do
+    local wndOpenRoll = Apollo.LoadForm(self.xmlDoc, "OpenRoll", wndItem, self)
+    local item = wndOpenRoll:GetParent():GetData()
+    wndOpenRoll:FindChild("Button"):SetData(item)
+  end
+end
+
+function AluraMasterLoot:UpdateLootSquidPlayers(ref, item)
   local tInfo = self.tLootList[item.nLootId]
   if not tInfo then return end
   local arResults = {}
