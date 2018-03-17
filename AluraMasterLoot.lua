@@ -158,11 +158,13 @@ function AluraMasterLoot:OnRollWindowEnd()
   end
   self:PartyPrint("============================")
   self:PartyPrint("Rolling has closed. Results:")
-  table.sort(arResults, self.ResultSorter)
+  table.sort(arResults, function(a, b)
+    return self:ResultSorter(a, b)
+  end)
   for _, tResult in ipairs(arResults) do
-    local strRoll = self:GetResultPrefix(tResult)
-    strRoll = strRoll..string.format("%3d ", tResult.nRoll)
-    self:PartyPrint(strRoll..tResult.strName)
+    local strRoll = string.format("%3d ", tResult.nRoll)
+    strRoll = strRoll..self:GetResultString(tResult)
+    self:PartyPrint(strRoll.."    "..tResult.strName)
   end
   self:PartyPrint("============================")
   local tLootInfo = self.tLootList[self.tRollInfo.nLootId]
@@ -196,9 +198,9 @@ function AluraMasterLoot:ResultSorter(tA, tB)
   end
   local arInfo = {
     {
-      strKey = "strRank",
+      strKey = "nRoll",
       funcRet = function(a, b)
-        return a < b
+        return a > b
       end
     }, {
       strKey = "bIsMainSpec",
@@ -211,9 +213,9 @@ function AluraMasterLoot:ResultSorter(tA, tB)
         return a
       end
     }, {
-      strKey = "nRoll",
+      strKey = "strRank",
       funcRet = function(a, b)
-        return a > b
+        return a < b
       end
     }, {
       strKey = "strName",
@@ -236,13 +238,13 @@ function AluraMasterLoot:ResultSorter(tA, tB)
   return tA < tB
 end
 
-function AluraMasterLoot:GetResultPrefix(tResult)
+function AluraMasterLoot:GetResultString(tResult)
   return string.format(
     "%s %s %s %s ",
-    tResult.strRank or "  ",
-    tResult.bIsMainSpec and "MS" or "  ",
-    tResult.bIsOffSpec and "OS" or "  ",
-    tResult.bIsSidegrade and "SG" or "  "
+    tResult.bIsMainSpec and "MS" or "      ",
+    tResult.bIsOffSpec and "OS" or "     ",
+    tResult.bIsSidegrade and "SG" or "    ",
+    tResult.strRank or "    "
   )
 end
 
@@ -292,24 +294,26 @@ function AluraMasterLoot:UpdateLootSquidPlayers(ref, item)
       end
       table.insert(arResults, tResult)
     end
-    table.sort(arResults, self.ResultSorter)
+    table.sort(arResults, function(a, b)
+      return self:ResultSorter(a, b)
+    end)
   end
   local tPlayerInfo = {}
   for idx, tResult in ipairs(arResults) do
-    local strPrefix = self:GetResultPrefix(tResult)
+    local strResult = self:GetResultString(tResult)
     if tResult.nRoll then
-      strPrefix = strPrefix..string.format("%3d ", tResult.nRoll)
+      strResult = string.format("%3d ", tResult.nRoll)..strResult
     end
     tPlayerInfo[tResult.strName] = {
       nPosition = idx,
-      strPrefix = strPrefix,
+      strPrefix = strResult,
     }
   end
   for strName, wndPlayer in pairs(ref.tPlayerWindows) do
     local tInfo = tPlayerInfo[strName]
     if tInfo then
       local wndName = wndPlayer:FindChild("Name")
-      wndName:SetText(tInfo.strPrefix..wndName:GetText())
+      wndName:SetText(tInfo.strPrefix.."    "..wndName:GetText())
     end
   end
   ref.wndPlayerList:ArrangeChildrenVert(Window.CodeEnumArrangeOrigin.LeftOrTop, function(a, b)
