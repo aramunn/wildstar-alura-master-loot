@@ -97,9 +97,11 @@ function AluraMasterLoot:UpdateLootList()
   local arLootList = GameLib.GetMasterLoot()
   local tLootList = {}
   for _, item in ipairs(arLootList) do
-    tLootList[item.nLootId] = self.tLootList[item.nLootId] or {
+    local tLootInfo = self.tLootList[item.nLootId] or {
       tRequests = {}
     }
+    tLootList[item.nLootId] = tLootInfo
+    tLootList[item.itemDrop:GetItemId()] = tLootInfo
   end
   self.tLootList = tLootList
 end
@@ -125,7 +127,7 @@ function AluraMasterLoot:CheckForRollModifiers(strName, strText)
 end
 
 function AluraMasterLoot:ParseItemRequest(strName, item, strText)
-  local tItem = self.tLootList[item.nLootId]
+  local tItem = self.tLootList[item:GetItemId()]
   if not tItem then return end
   tItem.tRequests[strName] = self:DetermineModifiers(strText)
 end
@@ -144,12 +146,18 @@ function AluraMasterLoot:OnRollWindowEnd()
     self:SystemPrint("Roll timer ended but no roll info??")
     return
   end
-  self:PartyPrint("============================")
-  self:PartyPrint("Rolling has closed. Results:")
   local arResults = {}
   for strName, tInfo in pairs(self.tRollInfo.tRollers) do
     self:InsertRollResult(arResults, strName, tInfo)
   end
+  if #arResults == 0 then
+    self:PartyPrint("============================")
+    self:PartyPrint("Nobody rolled. Random it!")
+    self:PartyPrint("============================")
+    return
+  end
+  self:PartyPrint("============================")
+  self:PartyPrint("Rolling has closed. Results:")
   table.sort(arResults, self.ResultSorter)
   for _, tResult in ipairs(arResults) do
     local strRoll = self:GetResultPrefix(tResult)
@@ -267,6 +275,7 @@ function AluraMasterLoot:UpdateLootSquidItems(ref)
 end
 
 function AluraMasterLoot:UpdateLootSquidPlayers(ref, item)
+  if not item then return end
   local tInfo = self.tLootList[item.nLootId]
   if not tInfo then return end
   local arResults = {}
@@ -286,7 +295,7 @@ function AluraMasterLoot:UpdateLootSquidPlayers(ref, item)
     table.sort(arResults, self.ResultSorter)
   end
   local tPlayerInfo = {}
-  for idx, tResult in ipairs(tInfo.arRollResults) do
+  for idx, tResult in ipairs(arResults) do
     local strPrefix = self:GetResultPrefix(tResult)
     if tResult.nRoll then
       strPrefix = strPrefix..string.format("%3d ", tResult.nRoll)
@@ -506,6 +515,7 @@ function AluraMasterLoot:OnDocumentReady()
   Apollo.RegisterEventHandler("LootAssigned",     "UpdateLootList", self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateLootList", self)
   self:HookLootSquid()
+  self:UpdateLootList()
 end
 
 local AluraMasterLootInst = AluraMasterLoot:new()
