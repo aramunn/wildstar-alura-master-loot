@@ -32,6 +32,28 @@ local ktModsMap = {
 -- General --
 -------------
 
+function AluraMasterLoot:OnSlashCommand(strCmd, strParams)
+  strParams = string.lower(strParams)
+  local strSub, strVal = string.match(strParams, "^%s*(%S+)%s+(%S+)%s*$")
+  if not strSub then
+    self:SystemPrint("To change settings do /aml SETTING VALUE")
+    self:SystemPrint("Available settings:")
+    self:SystemPrint("  rolltime")
+    self:SystemPrint("Current settings:")
+    self:SystemPrint("  Roll Time: "..tostring(self.tSave.nRollSeconds).." seconds")
+  elseif strSub == "rolltime" then
+    local nTime = tonumber(strVal)
+    if nTime then
+      self.tSave.nRollSeconds = nTime
+      self:SystemPrint("Roll Time set to: "..tostring(self.tSave.nRollSeconds).." seconds")
+    else
+      self:SystemPrint("Bad value for roll time")
+    end
+  else
+    self:SystemPrint("Unrecognized setting")
+  end
+end
+
 function AluraMasterLoot:ImportCsv(strCsv)
   if not strCsv then
     self:SystemPrint("Nothing to import")
@@ -519,7 +541,7 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc then return end
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
-  Apollo.RegisterSlashCommand("aml", "LoadMainWindow", self)
+  Apollo.RegisterSlashCommand("aml", "OnSlashCommand", self)
   Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
   Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateGrid",     self)
