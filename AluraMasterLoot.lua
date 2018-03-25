@@ -335,12 +335,22 @@ end
 -- Chat Input/Output --
 -----------------------
 
+function AluraMasterLoot:FindPartyChannel()
+  for _, channel in pairs(ChatSystemLib.GetChannels()) do
+    if channel:GetType() == ChatSystemLib.ChatChannel_Party then
+      self.channelParty = channel
+      return
+    end
+  end
+  self:SystemPrint("Error: Party channel not found")
+end
+
 function AluraMasterLoot:SystemPrint(message)
   ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_System, message, "AML")
 end
 
 function AluraMasterLoot:PartyPrint(message)
-  ChatSystemLib.PostOnChannel(ChatSystemLib.ChatChannel_Party, message, "AML")
+  self.channelParty:Send(message)
 end
 
 function AluraMasterLoot:HandleSystemMessage(tMessage)
@@ -518,6 +528,7 @@ function AluraMasterLoot:OnDocumentReady()
   Apollo.RegisterEventHandler("MasterLootUpdate", "UpdateLootList", self)
   Apollo.RegisterEventHandler("LootAssigned",     "UpdateLootList", self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateLootList", self)
+  self:FindPartyChannel()
   self:HookLootSquid()
   self:UpdateLootList()
 end
