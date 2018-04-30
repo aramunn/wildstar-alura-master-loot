@@ -214,39 +214,40 @@ function AluraMasterLoot:InsertRollResult(arResults, strName, tInfo)
   end
 end
 
+local karInfo = {
+  {
+    strKey = "nRoll",
+    funcRet = function(a, b)
+      return a > b
+    end
+  }, {
+    strKey = "bIsMainSpec",
+    funcRet = function(a, b)
+      return a
+    end
+  }, {
+    strKey = "bIsOffSpec",
+    funcRet = function(a, b)
+      return a
+    end
+  }, {
+    strKey = "strRank",
+    funcRet = function(a, b)
+      return a < b
+    end
+  }, {
+    strKey = "strName",
+    funcRet = function(a, b)
+      return a < b
+    end
+  }
+}
+
 function AluraMasterLoot:ResultSorter(tA, tB)
   if not tA or not tB then
     return tA ~= nil
   end
-  local arInfo = {
-    {
-      strKey = "nRoll",
-      funcRet = function(a, b)
-        return a > b
-      end
-    }, {
-      strKey = "bIsMainSpec",
-      funcRet = function(a, b)
-        return a
-      end
-    }, {
-      strKey = "bIsOffSpec",
-      funcRet = function(a, b)
-        return a
-      end
-    }, {
-      strKey = "strRank",
-      funcRet = function(a, b)
-        return a < b
-      end
-    }, {
-      strKey = "strName",
-      funcRet = function(a, b)
-        return a < b
-      end
-    }
-  }
-  for _, tInfo in ipairs(arInfo) do
+  for _, tInfo in ipairs(karInfo) do
     local a = tA[tInfo.strKey]
     local b = tB[tInfo.strKey]
     if a ~= b then
