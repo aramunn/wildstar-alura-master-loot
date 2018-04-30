@@ -243,6 +243,19 @@ local karInfo = {
   }
 }
 
+function InspectTable(t)
+  local str = "{ "
+  for k,v in pairs(t) do
+    str = str.."\""..tostring(k).."\"="
+    if type(v) == "table" then
+      str = str..InspectTable(v).." "
+    else
+      str = str.."\""..tostring(v).."\" "
+    end
+  end
+  return str.."}"
+end
+
 function AluraMasterLoot:ResultSorter(tA, tB)
   if not tA or not tB then
     return tA ~= nil
@@ -258,7 +271,11 @@ function AluraMasterLoot:ResultSorter(tA, tB)
       end
     end
   end
-  return tA < tB
+  --return tA < tB
+  self:WhisperAramunn("Aaaaaah!!! Duplicate values??")
+  self:WhisperAramunn("tA: "..InspectTable(tA))
+  self:WhisperAramunn("tB: "..InspectTable(tB))
+  return false
 end
 
 function AluraMasterLoot:GetResultString(tResult)
@@ -358,14 +375,17 @@ end
 -- Chat Input/Output --
 -----------------------
 
-function AluraMasterLoot:FindPartyChannel()
+function AluraMasterLoot:FindChannels()
   for _, channel in pairs(ChatSystemLib.GetChannels()) do
     if channel:GetType() == ChatSystemLib.ChatChannel_Party then
       self.channelParty = channel
-      return
+    elseif channel:GetType() == ChatSystemLib.ChatChannel_Whisper then
+      self.channelWhisper = channel
     end
   end
-  self:SystemPrint("Error: Party channel not found")
+  if not self.channelParty then
+    self:SystemPrint("Error: Party channel not found")
+  end
 end
 
 function AluraMasterLoot:SystemPrint(message)
@@ -373,7 +393,21 @@ function AluraMasterLoot:SystemPrint(message)
 end
 
 function AluraMasterLoot:PartyPrint(message)
-  self.channelParty:Send(message)
+  if self.channelParty then
+    self.channelParty:Send(message)
+  else
+    self:SystemPrint("[PARTY] "..message)
+  end
+end
+
+function AluraMasterLoot:WhisperAramunn(message)
+  if not self.channelWhisper then return end
+  for strName in pairs(self.tRaiders) do
+    if string.match(strName, " Aramunn") then
+      self.channelWhisper:Send(strName.." "..message)
+      return
+    end
+  end
 end
 
 function AluraMasterLoot:HandleSystemMessage(tMessage)
@@ -551,7 +585,7 @@ function AluraMasterLoot:OnDocumentReady()
   Apollo.RegisterEventHandler("MasterLootUpdate", "UpdateLootList", self)
   Apollo.RegisterEventHandler("LootAssigned",     "UpdateLootList", self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateLootList", self)
-  self:FindPartyChannel()
+  self:FindChannels()
   self:HookLootSquid()
   self:UpdateLootList()
 end
