@@ -243,19 +243,6 @@ local karInfo = {
   }
 }
 
-function InspectTable(t)
-  local str = "{ "
-  for k,v in pairs(t) do
-    str = str.."\""..tostring(k).."\"="
-    if type(v) == "table" then
-      str = str..InspectTable(v).." "
-    else
-      str = str.."\""..tostring(v).."\" "
-    end
-  end
-  return str.."}"
-end
-
 function AluraMasterLoot:ResultSorter(tA, tB)
   if not tA or not tB then
     return tA ~= nil
@@ -271,10 +258,6 @@ function AluraMasterLoot:ResultSorter(tA, tB)
       end
     end
   end
-  --return tA < tB
-  self:SystemPrint("Aaaaaah!!! Duplicate values??")
-  self:SystemPrint("tA: "..InspectTable(tA))
-  self:SystemPrint("tB: "..InspectTable(tB))
   return false
 end
 
@@ -308,7 +291,7 @@ function AluraMasterLoot:HookLootSquid()
 end
 
 function AluraMasterLoot:UpdateLootSquidItems(ref)
-  -- if not GroupLib.AmILeader() then return end
+  if not GroupLib.AmILeader() then return end
   for _, wndItem in ipairs(ref.tItemWindows) do
     local wndOpenRoll = Apollo.LoadForm(self.xmlDoc, "OpenRoll", wndItem, self)
     local item = wndOpenRoll:GetParent():GetData()
@@ -393,7 +376,6 @@ function AluraMasterLoot:SystemPrint(message)
 end
 
 function AluraMasterLoot:PartyPrint(message)
-  self.channelParty = nil
   if self.channelParty then
     self.channelParty:Send(message)
   else
@@ -536,6 +518,40 @@ function AluraMasterLoot:OnOpenRoll(wndHandler, wndControl)
   self.timerRoll = ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
 end
 
+----------------------------
+-- State Saving/Restoring --
+----------------------------
+
+function AluraMasterLoot:OnSave(eLevel)
+  if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return nil end
+  return self.tSave
+end
+
+function AluraMasterLoot:OnRestore(eLevel, tSave)
+  for k,v in pairs(tSave) do
+    if self.tSave[k] ~= nil then
+      self.tSave[k] = v
+    end
+  end
+end
+
+----------------------------
+-- Debug Stuff --
+----------------------------
+
+function InspectTable(t)
+  local str = "{ "
+  for k,v in pairs(t) do
+    str = str.."\""..tostring(k).."\"="
+    if type(v) == "table" then
+      str = str..InspectTable(v).." "
+    else
+      str = str.."\""..tostring(v).."\" "
+    end
+  end
+  return str.."}"
+end
+
 function AluraMasterLoot:OnTest()
   self.tRollInfo = {
     nLootId = 0,
@@ -555,23 +571,6 @@ function AluraMasterLoot:OnTest()
     end
   end
   self:OnRollWindowEnd()
-end
-
-----------------------------
--- State Saving/Restoring --
-----------------------------
-
-function AluraMasterLoot:OnSave(eLevel)
-  if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Realm then return nil end
-  return self.tSave
-end
-
-function AluraMasterLoot:OnRestore(eLevel, tSave)
-  for k,v in pairs(tSave) do
-    if self.tSave[k] ~= nil then
-      self.tSave[k] = v
-    end
-  end
 end
 
 --------------------
@@ -599,7 +598,7 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "OnSlashCommand", self)
-  Apollo.RegisterSlashCommand("amltest", "OnTest", self)
+  -- Apollo.RegisterSlashCommand("amltest", "OnTest", self)
   Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
   Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateGrid",     self)
