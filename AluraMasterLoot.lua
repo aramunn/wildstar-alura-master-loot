@@ -272,9 +272,9 @@ function AluraMasterLoot:ResultSorter(tA, tB)
     end
   end
   --return tA < tB
-  self:WhisperAramunn("Aaaaaah!!! Duplicate values??")
-  self:WhisperAramunn("tA: "..InspectTable(tA))
-  self:WhisperAramunn("tB: "..InspectTable(tB))
+  self:SystemPrint("Aaaaaah!!! Duplicate values??")
+  self:SystemPrint("tA: "..InspectTable(tA))
+  self:SystemPrint("tB: "..InspectTable(tB))
   return false
 end
 
@@ -308,7 +308,7 @@ function AluraMasterLoot:HookLootSquid()
 end
 
 function AluraMasterLoot:UpdateLootSquidItems(ref)
-  if not GroupLib.AmILeader() then return end
+  -- if not GroupLib.AmILeader() then return end
   for _, wndItem in ipairs(ref.tItemWindows) do
     local wndOpenRoll = Apollo.LoadForm(self.xmlDoc, "OpenRoll", wndItem, self)
     local item = wndOpenRoll:GetParent():GetData()
@@ -393,6 +393,7 @@ function AluraMasterLoot:SystemPrint(message)
 end
 
 function AluraMasterLoot:PartyPrint(message)
+  self.channelParty = nil
   if self.channelParty then
     self.channelParty:Send(message)
   else
@@ -535,6 +536,27 @@ function AluraMasterLoot:OnOpenRoll(wndHandler, wndControl)
   self.timerRoll = ApolloTimer.Create(self.tSave.nRollSeconds, false, "OnRollWindowEnd", self)
 end
 
+function AluraMasterLoot:OnTest()
+  self.tRollInfo = {
+    nLootId = 0,
+    tRollers = {},
+  }
+  local nMemberCount = GroupLib.GetMemberCount()
+  for idx = 1, nMemberCount do
+    local tMember = GroupLib.GetGroupMember(idx)
+    local strName = tMember.strCharacterName
+    if math.random() < .1 then
+      self.tRollInfo.tRollers[strName] = {
+        tRoll = {
+          nRoll = math.random(100),
+          nRange = 100
+        }
+      }
+    end
+  end
+  self:OnRollWindowEnd()
+end
+
 ----------------------------
 -- State Saving/Restoring --
 ----------------------------
@@ -577,6 +599,7 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "OnSlashCommand", self)
+  Apollo.RegisterSlashCommand("amltest", "OnTest", self)
   Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
   Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateGrid",     self)
