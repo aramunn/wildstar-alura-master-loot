@@ -291,7 +291,7 @@ function AluraMasterLoot:HookLootSquid()
 end
 
 function AluraMasterLoot:UpdateLootSquidItems(ref)
-  if not GroupLib.AmILeader() then return end
+  if not GroupLib.AmILeader() and not self.bDebug then return end
   for _, wndItem in ipairs(ref.tItemWindows) do
     local wndOpenRoll = Apollo.LoadForm(self.xmlDoc, "OpenRoll", wndItem, self)
     local item = wndOpenRoll:GetParent():GetData()
@@ -376,10 +376,10 @@ function AluraMasterLoot:SystemPrint(message)
 end
 
 function AluraMasterLoot:PartyPrint(message)
-  if self.channelParty then
-    self.channelParty:Send(message)
-  else
+  if not self.channelParty or self.bDebug then
     self:SystemPrint("[PARTY] "..message)
+  else
+    self.channelParty:Send(message)
   end
 end
 
@@ -540,10 +540,13 @@ end
 ----------------------------
 
 function AluraMasterLoot:OnDebug()
-  self.channelParty = nil
+  self.bDebug = not self.bDebug
+  local str = self.bDebug and "ON" or "off"
+  self:SystemPrint("Debug is "..str)
 end
 
-function AluraMasterLoot:OnTest()
+function AluraMasterLoot:OnTestRoll()
+  self.bDebug = true
   self.tRollInfo = {
     nLootId = 0,
     tRollers = {},
@@ -602,8 +605,8 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "OnSlashCommand", self)
-  -- Apollo.RegisterSlashCommand("amldebug", "OnDebug", self)
-  -- Apollo.RegisterSlashCommand("amltest", "OnTest", self)
+  Apollo.RegisterSlashCommand("amldebug", "OnDebug", self)
+  Apollo.RegisterSlashCommand("amltestroll", "OnTestRoll", self)
   Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
   Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
   Apollo.RegisterEventHandler("Group_Left",       "UpdateGrid",     self)
