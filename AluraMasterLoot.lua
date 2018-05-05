@@ -539,17 +539,8 @@ end
 -- Debug Stuff --
 ----------------------------
 
-function InspectTable(t)
-  local str = "{ "
-  for k,v in pairs(t) do
-    str = str.."\""..tostring(k).."\"="
-    if type(v) == "table" then
-      str = str..InspectTable(v).." "
-    else
-      str = str.."\""..tostring(v).."\" "
-    end
-  end
-  return str.."}"
+function AluraMasterLoot:OnDebug()
+  self.channelParty = nil
 end
 
 function AluraMasterLoot:OnTest()
@@ -571,6 +562,19 @@ function AluraMasterLoot:OnTest()
     end
   end
   self:OnRollWindowEnd()
+end
+
+function InspectTable(t)
+  local str = "{ "
+  for k,v in pairs(t) do
+    str = str.."\""..tostring(k).."\"="
+    if type(v) == "table" then
+      str = str..InspectTable(v).." "
+    else
+      str = str.."\""..tostring(v).."\" "
+    end
+  end
+  return str.."}"
 end
 
 --------------------
@@ -598,6 +602,7 @@ function AluraMasterLoot:OnDocumentReady()
   if not self.xmlDoc:IsLoaded() then return end
   Apollo.RegisterSlashCommand("arv", "LoadMainWindow", self)
   Apollo.RegisterSlashCommand("aml", "OnSlashCommand", self)
+  -- Apollo.RegisterSlashCommand("amldebug", "OnDebug", self)
   -- Apollo.RegisterSlashCommand("amltest", "OnTest", self)
   Apollo.RegisterEventHandler("ChatMessage",      "OnChatMessage",  self)
   Apollo.RegisterEventHandler("Group_Join",       "UpdateGrid",     self)
